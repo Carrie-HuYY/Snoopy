@@ -28,6 +28,124 @@ def get_Symbol(file_name):
 
     return Symbol
 
+# 'hepatocellular carcinoma'
+# 查询药物关于疾病的报道信息
+def get_drug_report_info(drug_ap, drug_cl, disease, input_num):
+    drug_ap_not_report, drug_ap_report, drug_cl_not_report, drug_cl_report = [], [], [], []
+    for drug_name in drug_ap:
+        # 这个名字需要进行处理
+        # 会出现特殊字符无法处理的情况[Avastin+/-Tarceva]
+        drug_name = drug_name.replace(
+            '+/-', ' ').replace(
+            '/', ' ').replace(
+            '[', '').replace(
+            ']', '').replace(
+            '-', ' ')
+        query = {
+            'query': {
+                'bool': {
+                    'must': [
+                        {
+                            "match": {
+                                "abstract": drug_name
+                            }
+                        },
+                        {
+                            "match_phrase": {
+                                "abstract": disease
+                            }
+                        },
+                    ]
+                }
+            }
+        }
+        res = es.search(index='abstract22', body=query, scroll='5m')
+        reported_number = res['hits']['total']['value']
+        es.clear_scroll(scroll_id=res['_scroll_id'])
+        if reported_number > input_num:
+            drug_ap_report.append(drug_name)
+        else:
+            drug_ap_not_report.append(drug_name)
+    for drug_name in drug_cl:
+        drug_name = drug_name.replace(
+            '+/-', ' ').replace(
+            '/', ' ').replace(
+            '[', '').replace(
+            ']', '').replace(
+            '-', ' ')
+        query = {
+            'query': {
+                'bool': {
+                    'must': [
+                        {
+                            "match": {
+                                "abstract": drug_name
+                            }
+                        },
+                        {
+                            "match_phrase": {
+                                "abstract": disease
+                            }
+                        },
+                    ]
+                }
+            }
+        }
+        res = es.search(index='abstract22', body=query, scroll='5m')
+        reported_number = res['hits']['total']['value']
+        es.clear_scroll(scroll_id=res['_scroll_id'])
+        if reported_number > input_num:
+            drug_cl_report.append(drug_name)
+        else:
+            drug_cl_not_report.append(drug_name)
+    return drug_ap_not_report, drug_ap_report, drug_cl_not_report, drug_cl_report
+
+
+# 从药物列表获取药物的频率
+def get_drug_frequency(drug_not_report, drug_report):
+    drug_frequency = []
+    if drug_not_report != []:
+        for drug in drug_not_report:
+            # 这个名字需要进行处理
+            # 会出现特殊字符无法处理的情况[Avastin+/-Tarceva]
+            drug_name = drug.replace(
+                '+/-', ' ').replace(
+                '/', ' ').replace(
+                '[', '').replace(
+                ']', '').replace(
+                '-', ' ')
+            query = {
+                'query': {
+                    "match": {
+                        "abstract": drug_name
+                    }
+                }
+            }
+            res = es.search(index='abstract22', body=query, scroll='5m')
+            reported_number = res['hits']['total']['value']
+            drug_frequency.append(reported_number)
+            es.clear_scroll(scroll_id=res['_scroll_id'])
+    else:
+        for drug in drug_report:
+            drug_name = drug.replace(
+                '+/-', ' ').replace(
+                '/', ' ').replace(
+                '[', '').replace(
+                ']', '').replace(
+                '-', ' ')
+            query = {
+                'query': {
+                    "match": {
+                        "abstract": drug_name
+                    }
+                }
+            }
+            res = es.search(index='abstract22', body=query, scroll='5m')
+            reported_number = res['hits']['total']['value']
+            drug_frequency.append(reported_number)
+            es.clear_scroll(scroll_id=res['_scroll_id'])
+    return drug_frequency
+
 
 def get_PPI_Symbol_List(symbol_list, interaction_num):
     '''
