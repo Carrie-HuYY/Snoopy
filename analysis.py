@@ -74,92 +74,51 @@ def classify_targets_html(target_have_drug, target_no_drug, target_FDA_approved,
         fp.write(str(soup))
 
 
+def query_target(symbol, Symbol_To_PubMedID, Symbol_To_UniprotID, Symbol_To_Fullname, keywords, file_path,
+                 sheet_name='Sheet1'):
+    """
+    在指定的 xlsx 文件的 Abstract 列中检索与基因符号相关的摘要数量。
+    :param symbol: 基因符号
+    :param Symbol_To_PubMedID: 基因符号到 PubMed ID 的映射字典
+    :param Symbol_To_UniprotID: 基因符号到 UniProt ID 的映射字典
+    :param Symbol_To_Fullname: 基因符号到全称的映射字典
+    :param keywords: 关键词列表
+    :param file_path: xlsx 文件路径
+    :param sheet_name: 工作表名称，默认为 'Sheet1'
+    :return: 满足条件的摘要数量
+    """
+    # 读取 xlsx 文件
+    df = pd.read_excel(file_path, sheet_name=sheet_name)
 
-def query_target(symbol, Symbol_To_PubMedID, Symbol_To_UniprotID, Symbol_To_Fullname, es, keywords):
-    '''
-    查询既要满足摘要在限定的列表中 又要满足这些摘要中存在HCC这个词组，还要在全部的摘要中输入的symbol和uniprotID
-    :param symbol:
-    :param Symbol_To_PubMedID:
-    :param Symbol_To_UniprotID:
-    :param Symbol_To_Fullname:
-    :param es:
-    :param keywords:
-    :return:
-    '''
-    uniprotID = Symbol_To_UniprotID[symbol]
-    pubMedId = Symbol_To_PubMedID[symbol]
-    # final_list = []
-    sql1 = {
-        'query': {
-            'bool': {
-                'must': [
-                    {
-                        'terms': {
-                            'pubMedId': pubMedId
-                        }
-                    },
-                    {
-                        "match_phrase": {
-                            "abstract": keywords
-                        }
-                    },
-                    {
-                        "match_phrase": {  # abstract中还要存在另一个关键词
-                            "abstract": symbol
-                        }
-                    },
-                ]
-            }
-        }
-    }
-    res = es.search(index='abstract22', body=sql1, scroll='5m')
-    reported_number_1 = res['hits']['total']['value']
-    es.clear_scroll(scroll_id=res['_scroll_id'])
-    # 在全部的摘要中检索疾病和symbol是否同时出现
-    if reported_number_1 == 0:
-        if symbol in Symbol_To_Fullname.keys():
-            fullName = Symbol_To_Fullname[symbol]
-            sql2 = {
-                "query": {
-                    "bool": {
-                        'must': [
-                            {
-                                "match_phrase": {
-                                    "abstract": keywords
-                                }
-                            },
-                            {
-                                "bool": {
-                                    "should": [
-                                        {
-                                            "match_phrase": {
-                                                "abstract": fullName
-                                            }
-                                        },
-                                        {
-                                            "match_phrase": {
-                                                "abstract": symbol
-                                            }
-                                        }
-                                    ]
-                                }
-                            }
-                        ]
-                    }
-                }
-            }
-            res = es.search(index='abstract22', body=sql2, scroll='5m')
-            reported_number_2 = res['hits']['total']['value']
-            es.clear_scroll(scroll_id=res['_scroll_id'])
-        else:
-            # 如果没有对应的全称，就将reported_number_2设置为0
-            # 这里可以还需要改一改，看看这种情况是否需要使用symbol进行检索
-            reported_number_2 = 0
-    else:
-        reported_number_2 = 0
-    # return (reported_number_1 + reported_number_2), final_list
+    # 获取基因符号对应的 PubMed ID 和 UniProt ID
+    uniprotID = Symbol_To_UniprotID.get(symbol, "")
+    pubMedId = Symbol_To_PubMedID.get(symbol, "")
+
+    # 初始化计数器
+    reported_number_1 = 0
+    reported_number_2 = 0
+
+    # 检索 Abstract 列
+    if 'Abstract' in df.columns:
+        # 第一个查询：检索包含 PubMed ID、关键词和基因符号的摘要
+        reported_number_1 = df[
+            df['Abstract'].str.contains(pubMedId, na=False) &
+            df['Abstract'].str.contains(keywords, na=False) &
+            df['Abstract'].str.contains(symbol, na=False)
+            ].shape[0]
+
+        # 如果第一个查询没有结果，尝试第二个查询
+        if reported_number_1 == 0:
+            fullName = Symbol_To_Fullname.get(symbol, "")
+            if fullName:
+                # 第二个查询：检索包含关键词和基因符号或全称的摘要
+                reported_number_2 = df[
+                    df['Abstract'].str.contains(keywords, na=False) &
+                    (df['Abstract'].str.contains(symbol, na=False) | df['Abstract'].str.contains(fullName, na=False))
+                    ].shape[0]
+
+    # 返回满足条件的摘要总数
     return reported_number_1 + reported_number_2
-
 
 # 通过摘要中的关键词进行查询，将靶标分为对于该疾病报道过的靶标和没有报道过的靶标
 def report_info(fa, ct, keywords, input_num):
