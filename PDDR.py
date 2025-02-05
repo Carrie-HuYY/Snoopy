@@ -26,14 +26,7 @@ def set_config_auto():
     return disease_name, reported_number, interaction_num
 
 
-
-def PDDR(protein_list_path):
-    '''
-    整体Snoopy代码运行流
-    :return: 返回result文件夹中的可视化方案及文件（可选）
-    '''
-    disease_name, reported_number, interaction_num = set_config_auto()
-
+def get_data(protein_list_path, interaction_num):
     sys.path.append('data/PPI')
     from PPI_target import get_targetNum_dict
 
@@ -54,14 +47,25 @@ def PDDR(protein_list_path):
     print('Program start time:',time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
 
     with open ('data/Drug/Symbol_To_Target.json', 'r') as f:
-        Symbol_To_Target = json.load(f)
+        Symbol_To_Target_wm = json.load(f)
 
     with open ('data/ID_Transformed/Symbol_To_Fullname.json', 'r') as f:
         Symbol_To_Fullname = json.load(f)
 
+    return Symbol_PPI_list, Symbol_To_Target_wm, Symbol_To_Fullname, Symbol_list
 
-    p_h_dr,p_no_dr,p_fa,p_ct,p_ot = analysis.classify_targets(Symbol_To_Target, Symbol_PPI_list)
-    h_dr,no_dr,fa,ct,ot = analysis.classify_targets(Symbol_To_Target, Symbol_list)
+
+def PDDR(protein_list_path):
+    '''
+    整体Snoopy代码运行流
+    :return: 返回result文件夹中的可视化方案及文件（可选）
+    '''
+    disease_name, reported_number, interaction_num = set_config_auto()
+
+    Symbol_PPI_list, Symbol_To_Target_wm, Symbol_To_Fullname, Symbol_list = get_data(protein_list_path, interaction_num)
+
+    p_h_dr,p_no_dr,p_fa,p_ct,p_ot = analysis.classify_targets_wm(Symbol_To_Target_wm, Symbol_PPI_list)
+    h_dr,no_dr,fa,ct,ot = analysis.classify_targets_wm(Symbol_To_Target_wm, Symbol_list)
 
     analysis.classify_targets_html(h_dr,no_dr,fa,ct,ot,'Target')
     analysis.classify_targets_html(p_h_dr,p_no_dr,p_fa,p_ct,p_ot,'PPI_Target')

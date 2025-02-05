@@ -4,9 +4,46 @@ from elasticsearch import Elasticsearch
 from output import drug_classify
 
 
-def classify_targets(Symbol_To_Target, Symbol_list):
+def classify_targets_wm(Symbol_To_Target, Symbol_list):
     '''
-    classify_targets: 根据给定的 Symbol_To_Target 字典和 Symbol_list 列表，对靶标（targets）进行分类。
+    classify_targets: 根据给定的 Symbol_To_Target 字典和 Symbol_list 列表，对靶标（targets）进行西药分类。
+
+    :param Symbol_To_Target:
+    :param Symbol_list:
+    :return:
+        有药物的靶标（target_have_drug）：这些靶标在 Symbol_To_Target 字典中有对应的条目，即存在与之相关的药物信息。
+        无药物的靶标（target_no_drug）：这些靶标在 Symbol_To_Target 字典中没有对应的条目，即没有与之相关的药物信息。
+        FDA批准的靶标（target_FDA_approved）：这些靶标不仅有药物，而且这些药物已经成功通过FDA审批。
+        临床试验中的靶标（target_clinical_trial）：这些靶标有药物，且这些药物目前处于临床试验阶段。
+        其他靶标（target_others）：这些靶标有药物，但药物既不是FDA批准的，也不在临床试验中。
+    '''
+    target_have_drug, target_no_drug = [], []
+    target_FDA_approved, target_clinical_trial, target_others = [], [], []
+
+    for symbol in Symbol_list:
+        if symbol in Symbol_To_Target.keys():
+            target_have_drug.append(symbol)
+        else:
+            target_no_drug.append(symbol)
+
+    for symbol in target_have_drug:
+        target_phage = [*Symbol_To_Target[symbol].values()][0]
+        target_name = [*Symbol_To_Target[symbol].keys()][0]
+        drug_phase, drug_ap_cl, drug_ap, drug_cl = drug_classify(target_name)
+        # 增加一个判断，如果symbol所在阶段确实存在对应的药物，则将其加入到对应的列表中
+        if target_phage == 'Successful target' and drug_ap != []:
+            target_FDA_approved.append(symbol)
+        elif target_phage == 'Clinical Trial target' and drug_cl != []:
+            target_clinical_trial.append(symbol)
+        else:
+            target_others.append(symbol)
+
+    return target_have_drug, target_no_drug, target_FDA_approved, target_clinical_trial, target_others
+
+
+def classify_targets_tcm(Symbol_To_Target, Symbol_list):
+    '''
+    classify_targets: 根据给定的 Symbol_To_Target 字典和 Symbol_list 列表，对靶标（targets）进行中药角度分类。
 
     :param Symbol_To_Target:
     :param Symbol_list:
