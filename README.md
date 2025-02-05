@@ -123,9 +123,11 @@ Snoopy包含三个主程序以及核心代码：
 ### 附1：Snnopy的支撑数据
 整体大小为9个G，由于百度网盘限制，所以拆分成三个压缩包，解压后放data/文件夹即可
 
-- [下载链接1](#https://pan.baidu.com/s/1w0cHqaoUaa_FtPPDLFTrAQ?pwd=jkd7) 提取码: jkd7 
-- [下载链接2](#https://pan.baidu.com/s/1tg8WQtJiJi70A8HIRYG_PA?pwd=9bvh) 提取码: 9bvh
-- [下载链接3](#https://pan.baidu.com/s/1tg8WQtJiJi70A8HIRYG_PA?pwd=9bvh) 提取码: 9bvh
+[下载链接1](#https://pan.baidu.com/s/1w0cHqaoUaa_FtPPDLFTrAQ?pwd=jkd7) 提取码: jkd7
+
+[下载链接2](#https://pan.baidu.com/s/1tg8WQtJiJi70A8HIRYG_PA?pwd=9bvh) 提取码: 9bvh
+
+[下载链接3](#https://pan.baidu.com/s/1tg8WQtJiJi70A8HIRYG_PA?pwd=9bvh) 提取码: 9bvh
 
 
 ### 附2：OTTM本地端使用方法
