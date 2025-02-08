@@ -2,6 +2,10 @@ import json
 import pandas as pd
 from pyecharts.charts import Sunburst ,Tree ,Bar ,Page
 from pyecharts import options as opts
+from elasticsearch import Elasticsearch
+import os
+import textwrap
+import get
 
 def all_targets_tree(fda_unre, fda_re, clinical_unre, clinical_re, dir_name):
 
@@ -129,7 +133,8 @@ def drug_treetype_data(drugs):
 # 生成每个靶标对应药物的树状图以及柱状图
 def target_tree_bar(dir_name, symbol, drug_frequency,
                     drug_ap_not_report, drug_ap_report,
-                    drug_cl_not_report, drug_cl_report):
+                    drug_cl_not_report, drug_cl_report,
+                    disease_name, reported_number):
     drug_ap_cl = drug_ap_not_report + drug_ap_report + drug_cl_not_report + drug_cl_report
     drug_not_report = drug_ap_not_report + drug_cl_not_report
     drug_report = drug_ap_report + drug_cl_report
@@ -183,7 +188,7 @@ def target_tree_bar(dir_name, symbol, drug_frequency,
         .add("", tree_data, collapse_interval=2,
              symbol_size=10,
              symbol="emptyCircle",
-             leaves_label_opts=opts.LabelOpts(position="right"),
+             #leaves_label_opts=opts.LabelOpts(position="right"),
              itemstyle_opts=opts.ItemStyleOpts(border_width=1, border_color="#48466d"),
              edge_fork_position="100%",
              )
@@ -337,7 +342,7 @@ def get_sunburst(un_relevant_targets_recommend_drug, fa, dir_name):
 
 
 # 生成excel表格
-def get_excel(un_relevant_targets_recommend_drug, dir_name):
+def get_excel(un_relevant_targets_recommend_drug, dir_name, disease_name, reported_number):
     # 生成excel表格
     df = pd.DataFrame(un_relevant_targets_recommend_drug.items(), columns=['Target', 'Drug'])
     df.to_excel('output/' + disease_name + ' reported_number_' + str(
@@ -345,7 +350,7 @@ def get_excel(un_relevant_targets_recommend_drug, dir_name):
 
 
 # 生成靶标对应药物的sunburst图和每个靶标对应的药物信息
-def get_sunburst_tree_bar(dir_name, fda_no_review, ct_no_review, fa, disease, input):
+def get_sunburst_tree_bar(dir_name, fda_no_review, ct_no_review, fa, disease, input, Symbol_To_Target, es):
 
     with open('config.json', 'r') as f:
         config = json.load(f)
@@ -364,19 +369,20 @@ def get_sunburst_tree_bar(dir_name, fda_no_review, ct_no_review, fa, disease, in
         (drug_ap_not_report,
          drug_ap_report,
          drug_cl_not_report,  # 需要提供两个关键词 1.疾病的名字 2.命中的数量
-         drug_cl_report) = get_drug_report_info(drug_ap, drug_cl, disease, input)
+         drug_cl_report) = get.get_drug_report_info(drug_ap, drug_cl, disease, input, es)
 
         # 药物热度频率
         drug_not_report = drug_ap_not_report + drug_cl_not_report
         drug_report = drug_ap_report + drug_cl_report
-        drug_frequency = get_drug_frequency(drug_not_report, drug_report)
-        if drug_frequency != []:
+        drug_frequency = get.get_drug_frequency(drug_not_report, drug_report, es)
+        if drug_frequency:
             os.makedirs(
                 'output/' + disease_name + ' reported_number_' + str(reported_number) + '/' + dir_name + '/' + symbol,
                 exist_ok=True)
             target_tree_bar(dir_name, symbol, drug_frequency,
                             drug_ap_not_report, drug_ap_report,
-                            drug_cl_not_report, drug_cl_report)
+                            drug_cl_not_report, drug_cl_report,
+                            disease_name, reported_number)
 
             number_index = drug_frequency.index(max(drug_frequency))
             if drug_not_report == []:
@@ -393,7 +399,7 @@ def get_sunburst_tree_bar(dir_name, fda_no_review, ct_no_review, fa, disease, in
 
 
 # 对推荐靶标数量进行控制
-def sort_targets(no_review, target_max_number):
+def sort_targets(no_review, target_max_number, es):
     # 将靶标和对应文献数量做成列表
     sort_list = []
     for target in no_review:
@@ -418,3 +424,6 @@ def sort_targets(no_review, target_max_number):
 def new_targets_list(list, sort_list):
     new_list = [x for x in list if x in sort_list]
     return new_list
+
+if __name__ == '__main__':
+    es = Elasticsearch(['https://localhost:9200'])

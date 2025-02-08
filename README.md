@@ -12,12 +12,15 @@
 [安装](#安装)
 
 [使用](#使用)
-- [配置文件与数据](#配置文件与数据)
-- [使用](#使用)
+- [安装搜索引擎](#1启动elasticsearch服务)
+- [配置文件与数据](#2配置文件与数据)
 
-[附1：Snnopy的支撑数据](#附1snnopy的支撑数据)
 
-[附2：OTTM本地端使用方法](#附2ottm本地端使用方法)
+[附1：核心代码讲解](#附1核心代码)
+
+[附2：Snnopy的支撑数据](#附2snnopy的支撑数据)
+
+[附3：OTTM本地端使用方法](#附3ottm本地端使用方法)
 
 ## 背景
 [OTTM项目](https://github.com/YXB-OTTM/OTTM)给出一个很有趣的思路，基于文献计量学进行“以靶找药”的药物推荐。
@@ -29,7 +32,7 @@
 
 - 对数据集进行优化更新，添加中药和药监局信息
 - 推荐用药中增加推荐的中药及中药方剂信息，并给出NMPA安全检测
-- 更改其使用的Elasticsearch，采用本地端形式保存数据
+- 更新Elasticsearch内容至v2025.1.5，并添加其他索引数据
 - 优化拆分代码结构，提高代码可读性，便于本地运行
 - 优化可视化方案并将整体包装成Python包的形式
 
@@ -62,7 +65,6 @@ Snoopy将候选蛋白分为两类：
 
 #### 1.4 基于[NMPA国家药监局](https://www.nmpa.gov.cn/)的安全性检查
 对于有对应中药的蛋白，Snoopy进一步将其分为两个子类：
-- `NMPA Approved TCM`: 已有对应作用并获得NMPA批准中药的靶点
 - `NMPA Approved Formula`: 已有对应作用并获得NMPA批准方剂的靶点
 - `Others`：不属于上述两类的靶点
 
@@ -89,10 +91,17 @@ OTTM的输出结果包括四种类型：
 
 ## 使用
 
-### 配置文件与数据
-此外，OTTM还提供了一个配置文件，用户可以通过该文件控制推荐药物的数量。
+### 1.启动Elasticsearch服务
+下载包装好的`Elasticsearch`搜索引擎，运行`elasticsearch.bat`程序
 
-### 核心代码
+如果执行elasticsearch时报错：*java.nio.file.NoSuchFileException: D:XXXX\Java\jdk-17\lib\tools.jar*
+
+**解决方法：删除系统环境变量中的CLASSPATH**
+
+### 2.配置文件与数据
+
+
+### 附1：核心代码
 Snoopy包含三个主程序以及核心代码：
 - `PDDR.py`：(Protein_Driven_Drug_Targeting.py, PDDR)主程序，用于配置环境，生成运行流。
 
@@ -120,17 +129,17 @@ Snoopy包含三个主程序以及核心代码：
 
 
 
-### 附1：Snnopy的支撑数据
+### 附2：Snnopy的支撑数据
 整体大小为9个G，由于百度网盘限制，所以拆分成三个压缩包，解压后放data/文件夹即可
 
-[下载链接1](#https://pan.baidu.com/s/1w0cHqaoUaa_FtPPDLFTrAQ?pwd=jkd7) 提取码: jkd7
+[下载链接1](https://pan.baidu.com/s/1zIlTjstJMscKdZnP30wc1g?pwd=2n2t) 
 
-[下载链接2](#https://pan.baidu.com/s/1tg8WQtJiJi70A8HIRYG_PA?pwd=9bvh) 提取码: 9bvh
+[下载链接2](https://pan.baidu.com/s/1tg8WQtJiJi70A8HIRYG_PA?pwd=9bvh) 
 
-[下载链接3](#https://pan.baidu.com/s/1tg8WQtJiJi70A8HIRYG_PA?pwd=9bvh) 提取码: 9bvh
+[下载链接3](https://pan.baidu.com/s/1tg8WQtJiJi70A8HIRYG_PA?pwd=9bvh) 
 
 
-### 附2：OTTM本地端使用方法
+### 附3：OTTM本地端使用方法
 
 #### 1. 数据下载
 从[OTTM官网](http://otter-simm.com/downloads.html)下载以下两个文件，
