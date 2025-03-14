@@ -7,6 +7,7 @@ import os
 import textwrap
 import get
 
+
 def all_targets_tree(fda_unre, fda_re, clinical_unre, clinical_re, dir_name):
 
     with open('config.json', 'r') as f:
